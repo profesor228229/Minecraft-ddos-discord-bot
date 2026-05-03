@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "me.devin.parkourbot.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "CameraAccessor",
+    "CameraMixin",
+    "EntityMixin",
+    "KeyboardInputMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
