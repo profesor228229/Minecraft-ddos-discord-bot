@@ -3,6 +3,7 @@ package me.devin.parkourbot.client.keybind;
 import me.devin.parkourbot.client.ParkourBotClient;
 import me.devin.parkourbot.client.ParkourBotState;
 import me.devin.parkourbot.client.freecam.Freecam;
+import me.devin.parkourbot.client.movement.MovementExecutor;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
@@ -17,6 +18,7 @@ public final class KeyBindings {
     public static KeyBinding STOP_BOT;
     public static KeyBinding SET_GOAL;
     public static KeyBinding TOGGLE_FREECAM;
+    public static KeyBinding TOGGLE_DEBUG;
 
     private KeyBindings() {}
 
@@ -33,6 +35,9 @@ public final class KeyBindings {
         TOGGLE_FREECAM = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.parkourbot.toggle_freecam",
                 InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_V, CATEGORY));
+        TOGGLE_DEBUG = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.parkourbot.toggle_debug",
+                InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_J, CATEGORY));
     }
 
     /** Called once per client tick. */
@@ -68,6 +73,12 @@ public final class KeyBindings {
 
         while (TOGGLE_FREECAM.wasPressed()) {
             Freecam.INSTANCE.toggle(client);
+        }
+
+        while (TOGGLE_DEBUG.wasPressed()) {
+            MovementExecutor.DEBUG = !MovementExecutor.DEBUG;
+            client.player.sendMessage(new LiteralText(
+                    "\u00a77[ParkourBot] debug " + (MovementExecutor.DEBUG ? "on" : "off")), false);
         }
     }
 }

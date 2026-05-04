@@ -5,6 +5,7 @@ import me.devin.parkourbot.client.freecam.Freecam;
 import me.devin.parkourbot.client.keybind.KeyBindings;
 import me.devin.parkourbot.client.movement.MovementExecutor;
 import me.devin.parkourbot.client.pathfinder.Pathfinder;
+import me.devin.parkourbot.client.render.PathRenderer;
 import me.devin.parkourbot.client.util.RayUtil;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -42,6 +43,7 @@ public final class ParkourBotClient implements ClientModInitializer {
     public void onInitializeClient() {
         KeyBindings.register();
         GotoCommand.register();
+        PathRenderer.register();
 
         ClientTickEvents.END_CLIENT_TICK.register(this::onEndClientTick);
         LOGGER.info("[ParkourBot] initialised. Open Controls -> Parkour Bot to bind keys.");
@@ -73,22 +75,29 @@ public final class ParkourBotClient implements ClientModInitializer {
                     try {
                         Pathfinder pf = new Pathfinder(world);
                         Pathfinder.Result r = pf.findPath(start, goal);
-                        STATE.setPath(r.path);
-                        if (r.path == null) {
-                            String msg = "[ParkourBot] no path found (" + r.reason + ")";
-                            LOGGER.info(msg);
+                        // Treat a single-step "best effort" path as a failure \u2014 it would
+                        // otherwise make the bot say "arrived" instantly without doing
+                        // anything, which looks like the bot just turning off.
+                        boolean trivial = r.path != null && r.path.size() <= 1
+                                && !"ok".equals(r.reason) && !"already at goal".equals(r.reason);
+                        if (r.path == null || trivial) {
+                            final String reason = r.reason == null ? "unknown" : r.reason;
+                            LOGGER.info("[ParkourBot] no path found ({})", reason);
+                            STATE.setPath(null);
                             client.execute(() -> {
                                 if (client.player != null) {
                                     client.player.sendMessage(new LiteralText(
-                                            "\u00a7c[ParkourBot] no path found (" + r.reason + ")"), false);
+                                            "\u00a7c[ParkourBot] no path found (" + reason + ")"), false);
                                 }
                             });
                             STATE.setEnabled(false);
                         } else {
+                            STATE.setPath(r.path);
                             client.execute(() -> {
                                 if (client.player != null) {
+                                    String suffix = "ok".equals(r.reason) ? "" : " \u00a77(" + r.reason + ")";
                                     client.player.sendMessage(new LiteralText(
-                                            "\u00a7a[ParkourBot] path of " + r.path.size() + " steps"), false);
+                                            "\u00a7a[ParkourBot] path of " + r.path.size() + " steps" + suffix), false);
                                 }
                             });
                         }

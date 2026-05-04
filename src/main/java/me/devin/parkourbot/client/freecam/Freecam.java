@@ -89,39 +89,45 @@ public final class Freecam {
         if (client.currentScreen != null) return; // pause / inventory
 
         GameOptions opts = client.options;
-        double forward = (opts.keyForward.isPressed() ? 1 : 0) - (opts.keyBack.isPressed() ? 1 : 0);
-        double strafe  = (opts.keyRight.isPressed()   ? 1 : 0) - (opts.keyLeft.isPressed() ? 1 : 0);
-        double vertical = (opts.keyJump.isPressed()  ? 1 : 0) - (opts.keySneak.isPressed() ? 1 : 0);
+        double forward  = (opts.keyForward.isPressed() ? 1 : 0) - (opts.keyBack.isPressed()  ? 1 : 0);
+        // Vanilla convention: sideways is positive when the LEFT key is pressed.
+        double sideways = (opts.keyLeft.isPressed()    ? 1 : 0) - (opts.keyRight.isPressed() ? 1 : 0);
+        double vertical = (opts.keyJump.isPressed()    ? 1 : 0) - (opts.keySneak.isPressed() ? 1 : 0);
 
         double speed = BASE_SPEED * (opts.keySprint.isPressed() ? SPRINT_FACTOR : 1.0);
 
-        if (forward != 0 || strafe != 0 || vertical != 0) {
+        if (forward != 0 || sideways != 0 || vertical != 0) {
             double yawRad = Math.toRadians(this.yaw);
-            double sin = Math.sin(yawRad);
-            double cos = Math.cos(yawRad);
-            // Forward in MC is -Z when yaw=0.
-            double dx = -sin * forward + cos * strafe;
-            double dz =  cos * forward + sin * strafe;
+            double sinY = Math.sin(yawRad);
+            double cosY = Math.cos(yawRad);
+            // Same conversion as Entity#movementInputToVelocity.
+            double dx = sideways * cosY - forward * sinY;
+            double dz = forward  * cosY + sideways * sinY;
             double len = Math.sqrt(dx * dx + dz * dz);
             if (len > 1.0) { dx /= len; dz /= len; }
             this.posX += dx * speed;
             this.posZ += dz * speed;
             this.posY += vertical * speed;
         }
+    }
 
-        // Right click -> set bot goal at the block we are pointing at.
-        while (opts.keyUse.wasPressed()) {
-            BlockHitResult hit = RayUtil.raycastFromFreecam(client, this);
-            if (hit == null || hit.getType() == HitResult.Type.MISS) {
-                client.player.sendMessage(new LiteralText(
-                        "\u00a7c[ParkourBot] freecam crosshair points at nothing"), false);
-                continue;
-            }
-            BlockPos goal = hit.getBlockPos().up();
-            ParkourBotClient.state().setGoal(goal);
-            ParkourBotClient.state().setPath(null);
+    /**
+     * Called from a {@code MinecraftClient#handleInputEvents} mixin BEFORE the game's own
+     * useKey loop runs, so we can capture and consume the right-click instead of letting
+     * the game try to interact from the player's (now far-away) position.
+     */
+    public void handleRightClick(MinecraftClient client) {
+        if (!enabled || client.player == null || client.world == null) return;
+        BlockHitResult hit = RayUtil.raycastFromFreecam(client, this);
+        if (hit == null || hit.getType() == HitResult.Type.MISS) {
             client.player.sendMessage(new LiteralText(
-                    "\u00a7e[ParkourBot] goal set: " + goal.getX() + " " + goal.getY() + " " + goal.getZ()), false);
+                    "\u00a7c[ParkourBot] freecam crosshair points at nothing"), false);
+            return;
         }
+        BlockPos goal = hit.getBlockPos().up();
+        ParkourBotClient.state().setGoal(goal);
+        ParkourBotClient.state().setPath(null);
+        client.player.sendMessage(new LiteralText(
+                "\u00a7e[ParkourBot] goal set: " + goal.getX() + " " + goal.getY() + " " + goal.getZ()), false);
     }
 }

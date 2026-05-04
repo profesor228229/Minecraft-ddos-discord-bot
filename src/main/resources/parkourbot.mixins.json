@@ -6,7 +6,9 @@
     "CameraAccessor",
     "CameraMixin",
     "EntityMixin",
-    "KeyboardInputMixin"
+    "KeyboardInputMixin",
+    "LivingEntityJumpMixin",
+    "MinecraftClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1

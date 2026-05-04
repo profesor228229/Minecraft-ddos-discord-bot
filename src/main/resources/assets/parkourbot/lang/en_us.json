@@ -3,5 +3,6 @@
   "key.parkourbot.toggle_bot": "Start / stop bot (must have a goal)",
   "key.parkourbot.stop_bot": "Stop bot and clear goal",
   "key.parkourbot.set_goal": "Set goal at crosshair (works in freecam too)",
-  "key.parkourbot.toggle_freecam": "Toggle freecam"
+  "key.parkourbot.toggle_freecam": "Toggle freecam",
+  "key.parkourbot.toggle_debug": "Toggle parkour debug overlay (rel/speed/jump)"
 }
